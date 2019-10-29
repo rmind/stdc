@@ -1,10 +1,11 @@
 Memory fences, atomics and C11 memory model
 ===========================================
 
-27 September 2019 (upstream at: https://github.com/rmind/stdc)
+29 October 2019 (upstream at: https://github.com/rmind/stdc)
 
 Mindaugas Rasiukevicius (rmind at noxt eu)
 
+Revision afe97c5 (2019-10-29) reviewed by Paul E. McKenney (paulmck at kernel org)
 
 Introduction
 ------------
