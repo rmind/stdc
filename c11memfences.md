@@ -7,6 +7,7 @@ Mindaugas Rasiukevicius (rmind at noxt eu)
 
 Revision afe97c5 (2019-10-29) reviewed by Paul E. McKenney (paulmck at kernel org)
 
+
 Introduction
 ------------
 
@@ -25,8 +26,8 @@ awareness of what has been introduced in the C11 standard is expected.
 practitioners who work in the field of lock-free programming.  It can
 serve as a brief guide on how to migrate from generally _assumed_ pre-C11
 memory model (with respect to concurrency) and "classic" memory barriers
-to the post-C11 world.  The dry C11/C17 standard text may leave the gaps
-in understand various aspects; this document attempts to fill those gaps.
+to the post-C11 world.  The dry C11/C17 standard text may leave gaps in
+understanding of various aspects; this document attempts to fill those gaps.
 
 Just to recap some key points:
 
@@ -103,8 +104,8 @@ See the section below.
 Emulation in C11
 ----------------
 
-In practice, Linux/Solaris memory READ/WRITE memory barriers can be
-safely emulated with the following C11 memory fences:
+In practice, Linux/Solaris READ/WRITE memory barriers can be safely emulated
+with the following C11 memory fences:
 
     smp_rmb(), membar_consumer()  => atomic_thread_fence(memory_order_acquire)
     smp_wmb(), membar_producer()  => atomic_thread_fence(memory_order_release)
@@ -214,7 +215,7 @@ using the `_Atomic` type qualifier or specifier.  These atomic types are
 incompatible with their primitives.
 
 - In C11, all variables used for synchronisation (as well as used with
-the atomics API routines) need to be qualified as `_Atomic`.
+the atomic API routines) need to be qualified as `_Atomic`.
 
 For example, the following is an ill-formed program and therefore may
 not compile:
@@ -223,16 +224,15 @@ not compile:
     ...
     atomic_store_explicit(&published, 1, memory_order_relaxed);
 
-Note: while LLVM/clang gives compilation error, GCC 8.3 (latest version
-as of writing this text) with `-std=c17` options produces a valid code (this
-is because GCC inlines C11 atomics as its own GCC built-ins).
+Note: while LLVM/clang gives a compilation error, GCC 8.3 (latest version
+as of writing this text) with `-std=c17` option produces a valid code; this
+is because GCC inlines C11 atomics as its own GCC built-ins.
 
 Assuming the `<stdatomic.h>` inclusion, the correct code would be:
 
     atomic_uint published;
     ...
     atomic_store_explicit(&published, 1, memory_order_relaxed);
-    ...
 
 Type incompatibility stems from the C11 standard allowing the atomic
 types to be implemented within the abstract C machine in non-lock-free
@@ -250,10 +250,13 @@ but it is allowed by the C11 standard.
 Compiler-level barriers
 -----------------------
 
-    C11:          void atomic_signal_fence(memory_order order)
+    C11:          atomic_signal_fence(memory_order_seq_cst)
     GCC:          asm volatile("": : :"memory")
     NetBSD:       __insn_barrier()
     Linux:        barrier()
+
+Note: `atomic_signal_fence()` also supports weaker ordering than
+`memory_order_seq_cst`.
 
 
 Data dependency barriers
