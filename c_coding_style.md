@@ -2,6 +2,47 @@
 
 23 June 2021 (upstream at: https://github.com/rmind/stdc)
 
+## Table of contents
+
+1. [General](#general)
+	1. [Indentation](#indentation)
+	2. [Line length](#line-length)
+	3. [Wrap around](#wrap-around)
+	4. [Comments](#comments)
+	5. [Spacing and brackets](#spacing-and-brackets)
+3. [Declarations and definitions](#declarations-and-definitions)
+	1. [Variable names and declarations](#variable-names-and-declarations)
+	2. [Type definitions](#type-definitions)
+	3. [Initialization](#initialization)
+4. [Control structures](#control-structures)
+	1. [General](#general-1)
+		1. [Avoid unnecessary nesting levels](#avoid-unnecessary-nesting-levels)
+	2. [if-statements](#if-statements)
+		1. [Avoid redundant else](#avoid-redundant-else)
+	3. [switch-statements](#switch-statements)
+5. [Functions](#functions)
+	1. [Function declarations](#function-declarations)
+	2. [Function definitions](#function-definitions)
+6. [Program organization](#program-organization)
+	1. [Headers](#headers)
+7. [Decent coding practices](#decent-coding-practices)
+	1. [Write clear, concise, succinct, unambiguous code](#write-clear-concise-succinct-unambiguous-code)
+	3. [Use good abstractions](#use-good-abstractions)
+		1. [Avoid magic numbers](#avoid-magic-numbers)
+		2. [Avoid excessive #ifdef](#avoid-excessive-ifdef)
+		3. [Be sensible with goto](#be-sensible-with-goto)
+	4. [Error handling](#error-handling)
+	5. [String handling](#string-handling)
+		1. [Embrace abstractions](#embrace-abstractions)
+		2. [Global strings](#global-strings)
+	6. [Use reasonable types](#use-reasonable-types)
+	7. [Embrace portability](#embrace-portability)
+		1. [Byte-order](#byte-order)
+		2. [Types](#types)
+		3. [Avoid unaligned access](#avoid-unaligned-access)
+		4. [Avoid extreme portability](#avoid-extreme-portability)
+8. [Reference](#references)
+
 ## General
 
 _Controlling complexity is the essence of computer programming._
@@ -23,7 +64,7 @@ Use **tabs** rather than spaces.  The tabs shall be **8** characters long.
 All lines should generally be within 80 characters.  Wrap long lines.
 There are some good reasons behind this:
 * It forces the developer to write more succinct code;
-* Humans are better at processing smaller quantity of information;
+* Humans are better at processing information in smaller quantity portions;
 * It helps users of vi/vim (and potentially other editors) who use
 vertical splits.
 
@@ -143,6 +184,10 @@ static const uint8_t tcp_fsm[TCP_NSTATES][2][TCPFC_COUNT] = {
 
 ## Control structures
 
+Try to make the control flow easy to follow.  Avoid long convoluted logic
+expressions; try to split them where possible (into inline functions,
+separate if-statements, etc).
+
 ### General
 
 The control structure keyword and the expression in the brackets should be
@@ -168,6 +213,40 @@ for (unsigned i = 0; i < __arraycount(items); i++) {
 	...
 }
 ```
+
+#### Avoid unnecessary nesting levels
+
+Avoid:
+```c
+int
+inspect(obj_t *obj)
+{
+	if (cond) {
+		...
+		...
+		// long code block
+		...
+		...
+		return 0;
+	}
+	return -1;
+}
+```
+Consider:
+```c
+int
+inspect(obj_t *obj)
+{
+	if (!cond) {
+		return -1;
+	}
+	...
+	...
+	...
+	return 0;
+}
+```
+However, do not make logic more convoluted.
 
 ### `if` statements
 
@@ -199,6 +278,26 @@ Wrap long conditions to the if-statement indentation adding extra 4 spaces:
 	}
 ```
 
+#### Avoid redundant `else`
+
+Avoid:
+```c
+	if (flag & F_FEATURE_X) {
+		...
+		return 0;
+	} else {
+		return -1;
+	}
+```
+Consider:
+```c
+	if (flag & F_FEATURE_X) {
+		...
+		return 0;
+	}
+	return -1;
+```
+
 #### `switch` statements
 
 Switch statements should have the `case` blocks at the same indentation
@@ -220,7 +319,7 @@ If the case bock does not break, then it is strongly recommended to add a
 comment containing "fallthrough" to indicate it.  Modern compilers can also
 be configured to require such comment (see gcc `-Wimplicit-fallthrough`).
 
-### Functions
+## Functions
 
 ### Function declarations
 
@@ -257,7 +356,7 @@ void	lib_init(void);
 
 Do not use old style K&R style C declarations.
 
-### Function definition
+### Function definitions
 
 In a function definition, the type _specifiers_ and type _qualifiers_ shall
 be in a separate line prior the function name and its parameters.  The opening
@@ -317,57 +416,6 @@ follow the universal principles which such language features help to achieve:
 information hiding principle, separation of concerns, code re-usability and
 modular design, etc.
 
-#### Avoid unnecessary nesting levels
-
-Avoid:
-```c
-int
-inspect(obj_t *obj)
-{
-	if (cond) {
-		...
-		...
-		...
-		return 0;
-	}
-	return -1;
-}
-```
-Consider:
-```c
-int
-inspect(obj_t *obj)
-{
-	if (!cond) {
-		return -1;
-	}
-	...
-	...
-	...
-	return 0;
-}
-```
-
-#### Avoid redundant `else`
-
-Avoid:
-```c
-	if (flag & F_FEATURE_X) {
-		...
-		return 0;
-	} else {
-		return -1;
-	}
-```
-Consider:
-```c
-	if (flag & F_FEATURE_X) {
-		...
-		return 0;
-	}
-	return -1;
-```
-
 #### Avoid magic numbers
 
 Unnamed numerical constants, also called _magic numbers_, should be avoided.
@@ -376,6 +424,10 @@ Unnamed numerical constants, also called _magic numbers_, should be avoided.
 
 See the wonderful essay by
 [Henry Spencer from 1992](https://www.usenix.org/legacy/publications/library/proceedings/sa92/spencer.pdf).
+
+Separate the code into low-level and higher-level APIs.  Generalize and
+abstract them as needed to avoid CPU-architecture or library-specific ifdefs
+in the higher-level layers.
 
 #### Be sensible with `goto`
 
