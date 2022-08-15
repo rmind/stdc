@@ -25,6 +25,7 @@
 	2. [Function definitions](#function-definitions)
 6. [Program organization](#program-organization)
 	1. [Headers](#headers)
+	2. [Object abstraction](#object-abstraction)
 7. [Decent coding practices](#decent-coding-practices)
 	1. [Write clear, concise, succinct, unambiguous code](#write-clear-concise-succinct-unambiguous-code)
 	3. [Use good abstractions](#use-good-abstractions)
@@ -398,6 +399,91 @@ __BEGIN_DECLS
 int	mylib_get_version(void);
 
 __END_DECLS
+```
+
+### Object abstraction
+
+Objects are often "simulated" by the C programmers with a `struct` and
+its "public API".  To enforce the information hiding principle, it is a
+good idea to define the structure in the source file (translation unit)
+and provide only the _declaration_ in the header.  For example, `obj.c`:
+
+```c
+#include "obj.h"
+
+struct obj {
+	int	value;
+}
+
+obj_t *
+obj_create(void)
+{
+	return calloc(1, sizeof(obj_t));
+}
+
+void
+obj_destroy(obj_t *obj)
+{
+	free(obj);
+}
+```
+
+With an example `obj.h`:
+```c
+#ifndef _OBJ_H_
+#define _OBJ_H_
+
+typedef struct obj;
+
+obj_t *		obj_create(void);
+void		obj_destroy(obj_t *);
+
+#endif
+```
+
+Such structuring will prevent direct access of the `obj_t` members outside
+the `obj.c` source file.  The implementation (of such "class" or "module")
+may be large and abstracted within separate source files.  In such case,
+consider separating structures and "methods" into separate headers (think of
+different visibility), for example `obj_impl.h` (private) and `obj.h` (public).
+
+Consider `crypto_impl.h`:
+```c
+#ifndef _CRYPTO_IMPL_H_
+#define _CRYPTO_IMPL_H_
+
+#if !defined(__CRYPTO_PRIVATE)
+#error "only to be used by the crypto modules"
+#endif
+
+#include "crypto.h"
+
+typedef struct crypto {
+	crypto_cipher_t	cipher;
+	void *		key;
+	size_t		key_len;
+	...
+}
+
+...
+
+#endif
+```
+
+And `crypto.h` (public API):
+
+```c
+#ifndef _CRYPTO_H_
+#define _CRYPTO_H_
+
+typedef struct crypto crypto_t;
+
+crypto_t *	crypto_create(crypto_cipher_t);
+void		crypto_destroy(crypto_t *);
+
+...
+
+#endif
 ```
 
 ## Decent coding practices
