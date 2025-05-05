@@ -1,6 +1,7 @@
 # The coding style for modern C
 
 23 June 2021 (upstream at: https://github.com/rmind/stdc)
+Updated: 5 May 2025
 
 ## Table of contents
 
@@ -134,6 +135,9 @@ const uint8_t * const charmap;  // const pointer and const data
 const void * restrict key;  // const pointer which does not alias
 ```
 
+- Declare variables at the begining of the block.  If possible, declare
+iterator/counter variables in the `for` loop.
+
 ### Type definitions
 
 Declarations shall be on the same line, e.g.:
@@ -181,6 +185,28 @@ static const uint8_t tcp_fsm[TCP_NSTATES][2][TCPFC_COUNT] = {
 	},
 	...
 }
+```
+
+### Macros
+
+- Macros which serve as functions should generally be defined in capital
+letters with the preprocessor directive and the definition separated by tabs:
+```c
+#define	MAX(x, y)	((x) > (y) ? (x) : (y))
+```
+
+- The parameters and the whole expression *must always* be protected with
+brackets as otherwise it is highly likely to result in bugs:
+```c
+#define	MIN(x, y)	x < y ? x : y	// BUG
+```
+
+- Consider re-using some de facto standard macros often provided by the
+systems, but define them with `#ifndef` for portability:
+```c
+#ifndef __arraycount
+#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
+#endif
 ```
 
 ## Control structures
@@ -316,9 +342,10 @@ level, e.g.:
 	}
 ```
 
-If the case bock does not break, then it is strongly recommended to add a
+If the `case` block does not break, then it is strongly recommended to add a
 comment containing "fallthrough" to indicate it.  Modern compilers can also
 be configured to require such comment (see gcc `-Wimplicit-fallthrough`).
+Alternatively, consider using C23 `[[fallthrough]]` declaration.
 
 ## Functions
 
@@ -355,7 +382,7 @@ functions with unknown parameters) using `void`, e.g.:
 void	lib_init(void);
 ```
 
-Do not use old style K&R style C declarations.
+Do not use old K&R style C declarations.
 
 ### Function definitions
 
@@ -379,9 +406,17 @@ Do not use old style K&R style C definitions.
 ### Headers
 
 Order of header inclusion: system level, standard libraries, 3rd party
-libraries or dependencies and, lastly, project (local) headers.
+libraries or dependencies and, lastly, project (local) headers.  Example:
+```c
+#include <stdio.h>
+#include <unistd.h>
 
-Ensure there is a guard for double inclusion, e.g.:
+#include <rhashmap.h>
+
+#include "utils.h"
+```
+
+Ensure headers have a guard for double inclusion, e.g.:
 ```c
 #ifndef _UTILS_H_
 #define _UTILS_H_
@@ -403,7 +438,7 @@ __END_DECLS
 
 ### Object abstraction
 
-Objects are often "simulated" by the C programmers with a `struct` and
+Objects are often "emulated" by the C programmers with a `struct` and
 its "public API".  To enforce the information hiding principle, it is a
 good idea to define the structure in the source file (translation unit)
 and provide only the _declaration_ in the header.  For example, `obj.c`:
@@ -413,6 +448,7 @@ and provide only the _declaration_ in the header.  For example, `obj.c`:
 
 struct obj {
 	int	value;
+	...
 }
 
 obj_t *
@@ -463,7 +499,7 @@ typedef struct crypto {
 	void *		key;
 	size_t		key_len;
 	...
-}
+};
 
 ...
 
@@ -498,7 +534,7 @@ how will you ever debug it?_ -- Brian Kernighan
 
 C does not have various features builtin, e.g. more granular visibility
 control (public/private), classes, modules, etc.  However, good C programmers
-follow the universal principles which such language features help to achieve:
+follow the universal principles that such language features help to achieve:
 information hiding principle, separation of concerns, code re-usability and
 modular design, etc.
 
@@ -522,6 +558,12 @@ In addition to
 (1968) by [Edsger Dijkstra](https://en.wikipedia.org/wiki/Edsger_W._Dijkstra), please also see the wonderful essay
 [Structured Programming with go to Statements](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.103.6084&rep=rep1&type=pdf)
 (1978) by [Donald Knuth](https://en.wikipedia.org/wiki/Donald_Knuth).
+
+#### Zero-based numbering
+
+Generally, stick with zero-based numbering and 0 ≤ i < N intervals, unless
+there is a very compelling reason not to.  It is universally accepted by the
+C developers.  Also, see EWD 831 (Dijkstra, 1982).
 
 ### Error handling
 
